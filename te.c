@@ -7,7 +7,7 @@ SDL_Surface *tile;
 SDL_Surface *sc;
 
 int ccolor=0;
-int ch,cs,cl;
+int ch=0,cs=0,cl=0;
 
 // http://qscribble.blogspot.com/2008/06/integer-conversion-from-hsl-to-rgb.html
 uint32_t HSL(int hue, int sat, int lum)
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 					ccolor=(y/16)*16 +((x-256-32)/16);
 				} else if(x>256+32 && x<256+32+256 && y>256+32 && y<256+64) {
 					ch=x-256-32;
-					uint32_t c=HSL(ch,255,128);
+					uint32_t c=HSL(ch,cs,cl);
 					colors[ccolor].r=(c>>16)&0xff;
 					colors[ccolor].g=(c>> 8)&0xff;
 					colors[ccolor].b=(c    )&0xff;
@@ -175,6 +175,11 @@ int main(int argc, char *argv[]) {
 					r.y++;
 					r.x-=256;
 				}
+
+				SDL_Rect s={256+32+cs-4,256+32+32+cl-4,8,8};
+				SDL_FillRect(sc,&s,HSL(0xff&(ch+128),256-cs,256-cl));
+				s.x+=1; s.y+=1; s.w-=2; s.h-=2;
+				SDL_FillRect(sc,&s,HSL(ch,cs,cl));
 			}
 		}
 
