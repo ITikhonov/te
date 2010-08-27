@@ -75,6 +75,11 @@ int main(int argc, char *argv[]) {
 					ccolor=(y/16)*16 +((x-256-32)/16);
 				} else if(x>256+32 && x<256+32+256 && y>256+32 && y<256+64) {
 					ch=x-256-32;
+					uint32_t c=HSL(ch,255,128);
+					colors[ccolor].r=(c>>16)&0xff;
+					colors[ccolor].g=(c>> 8)&0xff;
+					colors[ccolor].b=(c    )&0xff;
+					SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
 				} else if(x>256+32 && x<256+32+256 && y>256+32+32 && y<256+32+32+256) {
 					cs=x-256-32;
 					cl=y-256-32-32;
