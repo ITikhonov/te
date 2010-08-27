@@ -100,6 +100,21 @@ int main(int argc, char *argv[]) {
 			SDL_Rect r={0,256+32,32,32};
 			SDL_FillRect(sc,&r,0xffff00);
 			SDL_BlitSurface(tile,0,sc,&r);
+
+			int i,j;
+			SDL_Rect s={0,0,8,8};
+			SDL_LockSurface(tile);
+			for(i=0;i<32;i++) {
+				for(j=0;j<32;j++) {
+					uint8_t r,g,b,a;
+					SDL_GetRGBA(((uint8_t *)(tile->pixels))[j+i*32],tile->format,&r,&g,&b,&a);
+					SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+					s.x+=8;
+				}
+				s.x-=256;
+				s.y+=8;
+			}
+			SDL_UnlockSurface(tile);
 		}
 
 		{
@@ -159,8 +174,12 @@ int main(int argc, char *argv[]) {
 		}
 
 		if(x<256 && y<256) {
-			SDL_Rect r={8*(x/8),8*(y/8),8,8};
-			SDL_FillRect(sc,&r,0x0000ff);
+			SDL_Rect s={8*(x/8),8*(y/8),8,8};
+			uint8_t r,g,b,a;
+			SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
+			SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,~r,~g,~b,a));
+			s.x+=1; s.y+=1; s.w-=2; s.h-=2;
+			SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
 			SDL_ShowCursor(0);
 		} else {
 			SDL_ShowCursor(1);
