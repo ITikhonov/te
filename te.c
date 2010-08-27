@@ -68,8 +68,8 @@ int main(int argc, char *argv[]) {
 			if(e.type==SDL_MOUSEBUTTONDOWN) {
 				int x=e.button.x,y=e.button.y;
 				if(x<256 && y<256) {
-					SDL_Rect r={8*(x/8),8*(y/8),8,8};
-					SDL_FillRect(sc,&r,0x0000ff);
+					SDL_Rect r={x/8,y/8,1,1};
+					SDL_FillRect(tile,&r,ccolor);
 					SDL_ShowCursor(0);
 				} else if(x>256+32 && x<2*256+32 && y<256) {
 					ccolor=(y/16)*16 +((x-256-32)/16);
@@ -94,6 +94,12 @@ int main(int argc, char *argv[]) {
 		{
 			SDL_Rect r={0,0,256,256};
 			SDL_FillRect(sc,&r,0xffffff);
+		}
+
+		{
+			SDL_Rect r={0,256+32,32,32};
+			SDL_FillRect(sc,&r,0xffff00);
+			SDL_BlitSurface(tile,0,sc,&r);
 		}
 
 		{
