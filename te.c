@@ -103,10 +103,16 @@ int main(int argc, char *argv[]) {
 
 		{
 			SDL_Rect r={0,256+32,32,32};
-			SDL_FillRect(sc,&r,0xffff00);
-			SDL_BlitSurface(tile,0,sc,&r);
-
 			int i,j;
+			for(i=0;i<8;i++) {
+				for(j=0;j<8;j++) {
+					SDL_BlitSurface(tile,0,sc,&r);
+					r.x+=32;
+				}
+				r.x-=256;
+				r.y+=32;
+			}
+
 			SDL_Rect s={0,0,8,8};
 			SDL_LockSurface(tile);
 			for(i=0;i<32;i++) {
