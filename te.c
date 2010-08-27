@@ -42,6 +42,7 @@ uint32_t HSL(int hue, int sat, int lum)
     return SDL_MapRGBA(sc->format,r,g,b,0xff);
 }
 
+SDL_Color colors[256];
 
 int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -51,7 +52,6 @@ int main(int argc, char *argv[]) {
 		tile=IMG_Load(argv[1]);
 	} else {
 		tile=SDL_CreateRGBSurface(SDL_SWSURFACE,32,32,8,0,0,0,0);
-		SDL_Color colors[256];
 		int i; for(i=0;i<256;i++){
 			colors[i].r=i;
 			colors[i].g=i;
@@ -73,6 +73,16 @@ int main(int argc, char *argv[]) {
 					SDL_ShowCursor(0);
 				} else if(x>256+32 && x<2*256+32 && y<256) {
 					ccolor=(y/16)*16 +((x-256-32)/16);
+				} else if(x>256+32 && x<256+32+256 && y>256+32 && y<256+64) {
+					ch=x-256-32;
+				} else if(x>256+32 && x<256+32+256 && y>256+32+32 && y<256+32+32+256) {
+					cs=x-256-32;
+					cl=y-256-32-32;
+					uint32_t c=HSL(ch,cs,cl);
+					colors[ccolor].r=(c>>16)&0xff;
+					colors[ccolor].g=(c>> 8)&0xff;
+					colors[ccolor].b=(c    )&0xff;
+					SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
 				}
 			}
 		}
@@ -122,10 +132,23 @@ int main(int argc, char *argv[]) {
 			SDL_Rect a={256+32,256+32,256,256};
 			SDL_FillRect(sc,&a,0xffffff);
 
-			SDL_Rect r={256+32,256+32,1,32};
-			int i; for(i=0;i<256;i++) {
-				SDL_FillRect(sc,&r,HSL(i,255,128));
-				r.x++;
+			{	SDL_Rect r={256+32,256+32,1,32};
+				int i; for(i=0;i<256;i++) {
+					SDL_FillRect(sc,&r,HSL(i,255,128));
+					r.x++;
+				}
+			}
+
+			{	SDL_Rect r={256+32,256+32+32,1,1};
+				int i,j;
+				for(i=0;i<256;i++) {
+					for(j=0;j<256;j++) {
+						SDL_FillRect(sc,&r,HSL(ch,j,i));
+						r.x++;
+					}
+					r.y++;
+					r.x-=256;
+				}
 			}
 		}
 

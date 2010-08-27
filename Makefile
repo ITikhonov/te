@@ -1,4 +1,4 @@
-CFALGS=-g -Wall
+CFLAGS=-g -Wall
 LDLIBS=-lSDL -lSDL_image -lpng
 
 all: te
