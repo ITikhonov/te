@@ -78,6 +78,38 @@ void RGB(uint8_t r0, uint8_t g0, uint8_t b0, int *hue, int *sat, int *lum) {
 
 SDL_Color colors[256];
 
+int mx,my;
+
+void display_small_tiles() {
+	SDL_Rect r={0,256+32,32,32};
+	int i,j;
+	for(i=0;i<8;i++) {
+		for(j=0;j<8;j++) {
+			SDL_BlitSurface(tile,0,sc,&r);
+			if(mx<256 && my<256) {
+				SDL_Rect s={r.x+mx/8,r.y+my/8,1,1};
+				uint8_t r,g,b,a;
+				SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
+				SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+			}
+			r.x+=32;
+		}
+		r.x-=256;
+		r.y+=32;
+	}
+
+	if(mx<256 && my<256) {
+		int i;
+		for(i=0;i<8;i++) {
+			SDL_Rect r={mx/8+i*32,256+32-2,1,2};
+			SDL_FillRect(sc,&r,SDL_MapRGBA(sc->format,255,255,255,255));
+
+			SDL_Rect s={256,256+32+my/8+32*i,2,1};
+			SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,255,255,255,255));
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_VIDEO);
 	sc=SDL_SetVideoMode(800,600,32,SDL_HWSURFACE|SDL_DOUBLEBUF);
@@ -94,6 +126,10 @@ int main(int argc, char *argv[]) {
 			colors[i].b=i;
 		}
 		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
+	} else {
+		int i; for(i=0;i<tile->format->palette->ncolors;i++){
+			colors[i]=tile->format->palette->colors[i];
+		}
 	}
 
 	{
@@ -143,6 +179,7 @@ int main(int argc, char *argv[]) {
 
 		int x,y;
 		SDL_GetMouseState(&x,&y);
+		mx=x; my=y;
 		SDL_FillRect(sc,0,0x0);
 
 		{
@@ -151,17 +188,8 @@ int main(int argc, char *argv[]) {
 		}
 
 		{
-			SDL_Rect r={0,256+32,32,32};
+			display_small_tiles();
 			int i,j;
-			for(i=0;i<8;i++) {
-				for(j=0;j<8;j++) {
-					SDL_BlitSurface(tile,0,sc,&r);
-					r.x+=32;
-				}
-				r.x-=256;
-				r.y+=32;
-			}
-
 			SDL_Rect s={0,0,8,8};
 			SDL_LockSurface(tile);
 			for(i=0;i<32;i++) {
