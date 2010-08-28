@@ -3,7 +3,7 @@
 #include "pngwrite/IMG_savepng.h"
 
 
-SDL_Surface *tile;
+SDL_Surface *tile=0;
 SDL_Surface *sc;
 
 int ccolor=0;
@@ -84,7 +84,9 @@ int main(int argc, char *argv[]) {
 
 	if(argc>1) {
 		tile=IMG_Load(argv[1]);
-	} else {
+	}
+
+	if(!tile) {
 		tile=SDL_CreateRGBSurface(SDL_SWSURFACE,32,32,8,0,0,0,0);
 		int i; for(i=0;i<256;i++){
 			colors[i].r=i;
@@ -104,6 +106,11 @@ int main(int argc, char *argv[]) {
 		SDL_Event e;
 		while(SDL_PollEvent(&e)) {
 			if(e.type==SDL_QUIT) goto end;
+			if(e.type==SDL_KEYDOWN) {
+				if(e.key.keysym.sym==SDLK_s) {
+					IMG_SavePNG(argv[1],tile,0);
+				}
+			}
 			if(e.type==SDL_MOUSEBUTTONDOWN) {
 				int x=e.button.x,y=e.button.y;
 				if(x<256 && y<256) {
@@ -175,6 +182,7 @@ int main(int argc, char *argv[]) {
 			SDL_FillRect(sc,&r,0xffffff);
 			int c;
 			int ocolor=(y/16)*16 +((x-256-32)/16);
+			if(x<256+32 || x>=256*2+32) ocolor=-1;
 			for(c=0;c<tile->format->palette->ncolors;c++) {
 				SDL_Rect s={256+32+16*(c%16)+1,16*(c/16)+1,15,15};
 				uint8_t r,g,b,a;
