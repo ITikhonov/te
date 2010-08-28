@@ -42,6 +42,40 @@ uint32_t HSL(int hue, int sat, int lum)
     return SDL_MapRGBA(sc->format,r,g,b,0xff);
 }
 
+float max(float x, float y) { return x>y?x:y; }
+float min(float x, float y) { return x<y?x:y; }
+
+// http://www.student.kuleuven.be/~m0216922/CG/color.html#RGB_to_HSL_
+void RGB(uint8_t r0, uint8_t g0, uint8_t b0, int *hue, int *sat, int *lum) {
+    float r, g, b, h, s, l;
+    r = r0 / 256.0; 
+    g = g0 / 256.0; 
+    b = b0 / 256.0; 
+    float maxColor = max(r, max(g, b)); 
+    float minColor = min(r, min(g, b));
+    if(minColor==maxColor) {   
+        h = 0.0; //it doesn't matter what value it has       
+        s = 0.0;       
+        l = r; //doesn't matter if you pick r, g, or b   
+    } else {
+        l = (minColor + maxColor) / 2;     
+        
+        if(l < 0.5) s = (maxColor - minColor) / (maxColor + minColor);
+        else s = (maxColor - minColor) / (2.0 - maxColor - minColor);
+        
+        if(r == maxColor) h = (g - b) / (maxColor - minColor);
+        else if(g == maxColor) h = 2.0 + (b - r) / (maxColor - minColor);
+        else h = 4.0 + (r - g) / (maxColor - minColor);
+        
+        h /= 6; //to bring it to a number between 0 and 1
+        if(h < 0) h ++;
+    }
+
+    *hue=h*255.0;
+    *sat=s*255.0;
+    *lum=l*255.0;
+}
+
 SDL_Color colors[256];
 
 int main(int argc, char *argv[]) {
@@ -60,6 +94,12 @@ int main(int argc, char *argv[]) {
 		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
 	}
 
+	{
+		uint8_t r,g,b,a;
+		SDL_GetRGBA(0,tile->format,&r,&g,&b,&a);
+		RGB(r,g,b,&ch,&cs,&cl);
+	}
+
 	for(;;) {
 		SDL_Event e;
 		while(SDL_PollEvent(&e)) {
@@ -72,6 +112,9 @@ int main(int argc, char *argv[]) {
 					SDL_ShowCursor(0);
 				} else if(x>256+32 && x<2*256+32 && y<256) {
 					ccolor=(y/16)*16 +((x-256-32)/16);
+					uint8_t r,g,b,a;
+					SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
+					RGB(r,g,b,&ch,&cs,&cl);
 				} else if(x>256+32 && x<256+32+256 && y>256+32 && y<256+64) {
 					ch=x-256-32;
 					uint32_t c=HSL(ch,cs,cl);
@@ -170,6 +213,13 @@ int main(int argc, char *argv[]) {
 				}
 			}
 
+			{
+				SDL_Rect s={256+32+ch-4,256+32,8,32};
+				SDL_FillRect(sc,&s,HSL(0xff&(ch+128),255,128));
+				s.x+=1; s.y+=1; s.w-=2; s.h-=2;
+				SDL_FillRect(sc,&s,HSL(ch,255,128));
+			}
+
 			{	SDL_Rect r={256+32,256+32+32,1,1};
 				int i,j;
 				for(i=0;i<256;i++) {
@@ -182,7 +232,7 @@ int main(int argc, char *argv[]) {
 				}
 
 				SDL_Rect s={256+32+cs-4,256+32+32+cl-4,8,8};
-				SDL_FillRect(sc,&s,HSL(0xff&(ch+128),256-cs,256-cl));
+				SDL_FillRect(sc,&s,HSL(0xff&(ch+128),255-cs,255-cl));
 				s.x+=1; s.y+=1; s.w-=2; s.h-=2;
 				SDL_FillRect(sc,&s,HSL(ch,cs,cl));
 			}
