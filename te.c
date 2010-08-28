@@ -7,7 +7,7 @@ SDL_Surface *tile;
 SDL_Surface *sc;
 
 int ccolor=0;
-int ch=0,cs=0,cl=0;
+int ch=0,cs=0,cl=128;
 
 // http://qscribble.blogspot.com/2008/06/integer-conversion-from-hsl-to-rgb.html
 uint32_t HSL(int hue, int sat, int lum)
@@ -64,7 +64,6 @@ int main(int argc, char *argv[]) {
 		SDL_Event e;
 		while(SDL_PollEvent(&e)) {
 			if(e.type==SDL_QUIT) goto end;
-			if(e.type==SDL_KEYDOWN) goto end;
 			if(e.type==SDL_MOUSEBUTTONDOWN) {
 				int x=e.button.x,y=e.button.y;
 				if(x<256 && y<256) {
