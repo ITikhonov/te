@@ -217,6 +217,30 @@ void display_draw_cursor() {
 	}
 }
 
+void display_tile(int x, int y, struct tile *t) {
+	uint32_t pixels[32*32];
+	int i;
+	for(i=0;i<32*32;i++) {
+		struct color *c=t->c+t->p[i];
+		pixels[i]=SDL_MapRGBA(sc->format,c->r,c->g,c->b,128);
+	}
+
+	SDL_Surface *s=SDL_CreateRGBSurfaceFrom(pixels,32,32,32,32*4,
+				sc->format->Rmask,sc->format->Gmask,sc->format->Bmask,sc->format->Amask);
+
+	SDL_Rect r={x,y,32,32};
+	SDL_FillRect(sc,&r,0xffff00);
+	SDL_BlitSurface(s,0,sc,&r);
+	SDL_FreeSurface(s);
+}
+
+void display_tiles() {
+	int i;
+	for(i=0;i<400;i++) {
+		display_tile(256*2+32*2,i*32,tiles+i);
+	}
+}
+
 void select_color() {
 	if(mx>256+32 && mx<2*256+32 && my<256) {
 		ccolor=(my/16)*16 +((mx-256-32)/16);
@@ -250,6 +274,12 @@ void select_satlum() {
 void set_edit_tile(int n) {
 	tile=tiles+n;
 	ccolor=0;
+}
+
+void select_tile() {
+	if(mx>256*2+32*2) {
+		set_edit_tile(my/32);
+	}
 }
 
 uint8_t fill_palette(struct color *p, uint8_t r, uint8_t g, uint8_t b) {
@@ -310,6 +340,7 @@ int main(int argc, char *argv[]) {
 				select_color();
 				select_hue();
 				select_satlum();
+				select_tile();
 			}
 		}
 
@@ -338,6 +369,8 @@ int main(int argc, char *argv[]) {
 
 		display_satlum_rect();
 		display_satlum_current();
+
+		display_tiles();
 
 
 		SDL_Flip(sc);
