@@ -110,6 +110,23 @@ void display_small_tiles() {
 	}
 }
 
+void display_big_image() {
+	int i,j;
+	SDL_Rect s={0,0,8,8};
+	SDL_LockSurface(tile);
+	for(i=0;i<32;i++) {
+		for(j=0;j<32;j++) {
+			uint8_t r,g,b,a;
+			SDL_GetRGBA(((uint8_t *)(tile->pixels))[j+i*32],tile->format,&r,&g,&b,&a);
+			SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+			s.x+=8;
+		}
+		s.x-=256;
+		s.y+=8;
+	}
+	SDL_UnlockSurface(tile);
+}
+
 int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_VIDEO);
 	sc=SDL_SetVideoMode(800,600,32,SDL_HWSURFACE|SDL_DOUBLEBUF);
@@ -187,30 +204,13 @@ int main(int argc, char *argv[]) {
 			SDL_FillRect(sc,&r,0xffffff);
 		}
 
-		{
-			display_small_tiles();
-			int i,j;
-			SDL_Rect s={0,0,8,8};
-			SDL_LockSurface(tile);
-			for(i=0;i<32;i++) {
-				for(j=0;j<32;j++) {
-					uint8_t r,g,b,a;
-					SDL_GetRGBA(((uint8_t *)(tile->pixels))[j+i*32],tile->format,&r,&g,&b,&a);
-					SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
-					s.x+=8;
-				}
-				s.x-=256;
-				s.y+=8;
-			}
-			SDL_UnlockSurface(tile);
-		}
+		display_small_tiles();
+		display_big_image();
 
 		{
 			SDL_Rect r={256+32,0,256,256};
 			SDL_FillRect(sc,&r,0xffffff);
 			int c;
-			int ocolor=(y/16)*16 +((x-256-32)/16);
-			if(x<256+32 || x>=256*2+32) ocolor=-1;
 			for(c=0;c<tile->format->palette->ncolors;c++) {
 				SDL_Rect s={256+32+16*(c%16)+1,16*(c/16)+1,15,15};
 				uint8_t r,g,b,a;
@@ -227,6 +227,8 @@ int main(int argc, char *argv[]) {
 				SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
 			}
 
+			int ocolor=(y/16)*16 +((x-256-32)/16);
+			if(x<256+32 || x>=256*2+32) ocolor=-1;
 			if(ocolor>=0 && ocolor<256) {
 				SDL_Rect s={256+32+16*(ocolor%16)-8,16*(ocolor/16)-8,16+16,16+16};
 				uint8_t r,g,b,a;
