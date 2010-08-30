@@ -2,12 +2,9 @@
 #include <SDL/SDL_image.h>
 #include "pngwrite/IMG_savepng.h"
 
+struct tile { struct color { uint8_t r,g,b,a; } c[255]; uint8_t p[32*32]; } tiles[400];
 
-SDL_Surface *tiles;
-
-uint16_t map[8][8];
-
-SDL_Surface *tile=0;
+struct tile *tile=0;
 SDL_Surface *sc;
 
 int ccolor=0;
@@ -80,9 +77,23 @@ void RGB(uint8_t r0, uint8_t g0, uint8_t b0, int *hue, int *sat, int *lum) {
     *lum=l*255.0;
 }
 
-SDL_Color colors[256];
-
 int mx,my;
+
+void display_big_image() {
+	int i,j;
+	SDL_Rect s={0,0,8,8};
+	for(i=0;i<32;i++) {
+		for(j=0;j<32;j++) {
+			struct color *c=tile->c+tile->p[i*32+j];
+			SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,c->r,c->g,c->b,c->a));
+			s.x+=8;
+		}
+		s.x-=256;
+		s.y+=8;
+	}
+}
+
+#if 0
 
 void display_small_tiles() {
 	SDL_Rect r={0,256+32,32,32};
@@ -114,44 +125,28 @@ void display_small_tiles() {
 	}
 }
 
-void display_big_image() {
-	int i,j;
-	SDL_Rect s={0,0,8,8};
-	SDL_LockSurface(tile);
-	for(i=0;i<32;i++) {
-		for(j=0;j<32;j++) {
-			uint8_t r,g,b,a;
-			SDL_GetRGBA(((uint8_t *)(tile->pixels))[j+i*32],tile->format,&r,&g,&b,&a);
-			SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
-			s.x+=8;
-		}
-		s.x-=256;
-		s.y+=8;
-	}
-	SDL_UnlockSurface(tile);
-}
 
+#endif
 
 void display_palette() {
 	SDL_Rect r={256+32,0,256,256};
 	SDL_FillRect(sc,&r,0xffffff);
 	int c;
-	for(c=0;c<tile->format->palette->ncolors;c++) {
+	for(c=0;c<256;c++) {
 		SDL_Rect s={256+32+16*(c%16)+1,16*(c/16)+1,15,15};
-		uint8_t r,g,b,a;
-		SDL_GetRGBA(c,tile->format,&r,&g,&b,&a);
-		SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+		struct color *d=tile->c+c;
+		SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,d->r,d->g,d->b,d->a));
 	}
 }
 
 void display_palette_current_color()
 {
 	SDL_Rect s={256+32+16*(ccolor%16)-8,16*(ccolor/16)-8,16+16,16+16};
-	uint8_t r,g,b,a;
-	SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
-	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,255,0,0,a));
+	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,255,0,0,0xff));
 	s.x+=1; s.y+=1; s.w-=2; s.h-=2;
-	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+
+	struct color *d=tile->c+ccolor;
+	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,d->r,d->g,d->b,d->a));
 }
 
 
@@ -160,11 +155,12 @@ void display_palette_hover_color()
 	if(mx<256+32 || mx>=256*2+32 || my>256) return;
 	int ocolor=(my/16)*16 +((mx-256-32)/16);
 	SDL_Rect s={256+32+16*(ocolor%16)-8,16*(ocolor/16)-8,16+16,16+16};
-	uint8_t r,g,b,a;
-	SDL_GetRGBA(ocolor,tile->format,&r,&g,&b,&a);
-	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,255,255,0,a));
+
+	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,255,255,0,0xff));
 	s.x+=1; s.y+=1; s.w-=2; s.h-=2;
-	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+
+	struct color *d=tile->c+ocolor;
+	SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,d->r,d->g,d->b,d->a));
 }
 
 void display_hue_bar()
@@ -210,23 +206,24 @@ void display_satlum_current()
 void display_draw_cursor() {
 	if(mx<256 && my<256) {
 		SDL_Rect s={8*(mx/8),8*(my/8),8,8};
-		uint8_t r,g,b,a;
-		SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
-		SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,~r,~g,~b,a));
+
+		struct color *d=tile->c+ccolor;
+		SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,~d->r,~d->g,~d->b,d->a));
 		s.x+=1; s.y+=1; s.w-=2; s.h-=2;
-		SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,r,g,b,a));
+		SDL_FillRect(sc,&s,SDL_MapRGBA(sc->format,d->r,d->g,d->b,d->a));
 		SDL_ShowCursor(0);
 	} else {
 		SDL_ShowCursor(1);
 	}
 }
 
+#if 0
+
 void select_color() {
 	if(mx>256+32 && mx<2*256+32 && my<256) {
 		ccolor=(my/16)*16 +((mx-256-32)/16);
-		uint8_t r,g,b,a;
-		SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
-		RGB(r,g,b,&ch,&cs,&cl);
+		struct color *d=colors+ccolor;
+		RGB(d->r,d->g,d->b,&ch,&cs,&cl);
 	}
 }
 
@@ -237,7 +234,6 @@ void select_hue() {
 		colors[ccolor].r=(c>>16)&0xff;
 		colors[ccolor].g=(c>> 8)&0xff;
 		colors[ccolor].b=(c    )&0xff;
-		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
 	}
 }
 
@@ -253,38 +249,28 @@ void select_satlum() {
 	}
 }
 
+#endif
+
+
 void set_edit_tile(int n) {
-	SDL_FreeSurface(tile);
+	tile=tiles+n;
 
-	tile=SDL_CreateRGBSurface(SDL_SWSURFACE|SDL_SRCALPHA,32,32,8,0,0,0,0);
-	SDL_SetColorKey(tile,SDL_SRCCOLORKEY,0);
-	SDL_Surface *rgb=SDL_CreateRGBSurface(SDL_SWSURFACE|SDL_SRCALPHA,32,32,32,0,0,0,0);
 
-	SDL_Rect r={32*(n%20),32*(n/20),32,32};
-	SDL_BlitSurface(tiles,&r,rgb,0);
+}
 
-	SDL_LockSurface(rgb);
-	SDL_Color cs[256];
-	int ncolors=1;
-	int i,j;
-	for(i=0;i<1024;i++) {
-		uint32_t c=((uint32_t*)(rgb->pixels))[i];
-		uint8_t r=c>>16,g=(c>>8)&0xff,b=c&0xff;
-		for(j=0;j<ncolors;j++) {
-			if(cs[j].r==r &&cs[j].g==g &&cs[j].b==b) {
-				goto next;
-			}
-		}
-		cs[ncolors].r=r; cs[ncolors].g=g; cs[ncolors].b=b;
-		ncolors++;
-		next:;
+uint8_t fill_palette(struct color *p, uint8_t r, uint8_t g, uint8_t b) {
+	int i,e=0;
+	for(i=1;i<256;i++) {
+		struct color *c=p+i;
+		if(c->a==0 && !e) {e=i; continue; }
+		if(c->r==r && c->g==g && c->b==b && c->a!=0) return i;
 	}
-	SDL_UnlockSurface(rgb);
-	SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,cs,0,ncolors);
-	SDL_BlitSurface(rgb,0,tile,0);
-	SDL_FreeSurface(rgb);
 
-	printf("/set %u\n",ncolors);
+	p[e].r=r;
+	p[e].g=g;
+	p[e].b=b;
+	p[e].a=0xff;
+	return i;
 }
 
 int main(int argc, char *argv[]) {
@@ -292,20 +278,27 @@ int main(int argc, char *argv[]) {
 	sc=SDL_SetVideoMode(800,600,32,SDL_HWSURFACE|SDL_DOUBLEBUF);
 
 	if(argc>1) {
-		tiles=IMG_Load(argv[1]);
-	}
+		SDL_Surface *img=IMG_Load(argv[1]);
+		int i,j;
+		SDL_LockSurface(img);
+		for(i=0;i<400;i++) {
+			memset(tiles[i].c,0,sizeof(tiles[i].c));
+			for(j=0;j<32*32;j++) {
+				uint32_t c=((uint32_t*)(img->pixels))[
+					(i%20)*32 + (j%32) + ((i/20)*32 + j/32)*640
+				];
+				uint8_t r=(c&img->format->Rmask)>>(img->format->Rshift),
+					g=(c&img->format->Gmask)>>(img->format->Gshift),
+					b=(c&img->format->Bmask)>>(img->format->Bshift),
+					a=(c&img->format->Amask)>>(img->format->Ashift);
 
-	if(!tiles) {
-		tiles=SDL_CreateRGBSurface(SDL_SWSURFACE,640,640,32,0,0,0,0);
+				tiles[i].p[j]=a?fill_palette(tiles[i].c,r,g,b):0;
+			}
+		}
+		SDL_UnlockSurface(img);
 	}
 
 	set_edit_tile(0);
-
-	{
-		uint8_t r,g,b,a;
-		SDL_GetRGBA(0,tile->format,&r,&g,&b,&a);
-		RGB(r,g,b,&ch,&cs,&cl);
-	}
 
 	for(;;) {
 		SDL_Event e;
@@ -313,16 +306,18 @@ int main(int argc, char *argv[]) {
 			if(e.type==SDL_QUIT) goto end;
 			if(e.type==SDL_KEYDOWN) {
 				if(e.key.keysym.sym==SDLK_s) {
-					IMG_SavePNG(argv[1],tile,0);
+					//IMG_SavePNG(argv[1],tile,0);
 				}
 			}
 			if(e.type==SDL_MOUSEBUTTONDOWN) {
 				mx=e.button.x;
 				my=e.button.y;
 
+#if 0
 				select_color();
 				select_hue();
 				select_satlum();
+#endif
 			}
 		}
 
@@ -336,12 +331,15 @@ int main(int argc, char *argv[]) {
 			SDL_FillRect(sc,&r,0xffffff);
 		}
 
-		display_small_tiles();
 		display_big_image();
 
+#if 0
+		display_draw_cursor();
+		display_small_tiles();
+
+#endif
 		display_palette();
 		display_palette_current_color();
-
 		display_palette_hover_color();
 
 		display_hue_bar();
@@ -350,7 +348,6 @@ int main(int argc, char *argv[]) {
 		display_satlum_rect();
 		display_satlum_current();
 
-		display_draw_cursor();
 
 		SDL_Flip(sc);
 	}
