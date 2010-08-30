@@ -217,12 +217,12 @@ void display_draw_cursor() {
 	}
 }
 
-#if 0
+#if 1
 
 void select_color() {
 	if(mx>256+32 && mx<2*256+32 && my<256) {
 		ccolor=(my/16)*16 +((mx-256-32)/16);
-		struct color *d=colors+ccolor;
+		struct color *d=tile->c+ccolor;
 		RGB(d->r,d->g,d->b,&ch,&cs,&cl);
 	}
 }
@@ -231,9 +231,9 @@ void select_hue() {
 	if(mx>256+32 && mx<256+32+256 && my>256+32 && my<256+64) {
 		ch=mx-256-32;
 		uint32_t c=HSL(ch,cs,cl);
-		colors[ccolor].r=(c>>16)&0xff;
-		colors[ccolor].g=(c>> 8)&0xff;
-		colors[ccolor].b=(c    )&0xff;
+		tile->c[ccolor].r=(c>>16)&0xff;
+		tile->c[ccolor].g=(c>> 8)&0xff;
+		tile->c[ccolor].b=(c    )&0xff;
 	}
 }
 
@@ -242,15 +242,14 @@ void select_satlum() {
 		cs=mx-256-32;
 		cl=my-256-32-32;
 		uint32_t c=HSL(ch,cs,cl);
-		colors[ccolor].r=(c>>16)&0xff;
-		colors[ccolor].g=(c>> 8)&0xff;
-		colors[ccolor].b=(c    )&0xff;
-		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
+		tile->c[ccolor].r=(c>>16)&0xff;
+		tile->c[ccolor].g=(c>> 8)&0xff;
+		tile->c[ccolor].b=(c    )&0xff;
 	}
 }
 
-#endif
 
+#endif
 
 void set_edit_tile(int n) {
 	tile=tiles+n;
@@ -270,7 +269,7 @@ uint8_t fill_palette(struct color *p, uint8_t r, uint8_t g, uint8_t b) {
 	p[e].g=g;
 	p[e].b=b;
 	p[e].a=0xff;
-	return i;
+	return e;
 }
 
 int main(int argc, char *argv[]) {
@@ -313,7 +312,7 @@ int main(int argc, char *argv[]) {
 				mx=e.button.x;
 				my=e.button.y;
 
-#if 0
+#if 1
 				select_color();
 				select_hue();
 				select_satlum();
