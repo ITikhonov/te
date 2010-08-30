@@ -3,6 +3,10 @@
 #include "pngwrite/IMG_savepng.h"
 
 
+SDL_Surface *tiles;
+
+uint16_t map[8][8];
+
 SDL_Surface *tile=0;
 SDL_Surface *sc;
 
@@ -249,27 +253,53 @@ void select_satlum() {
 	}
 }
 
+void set_edit_tile(int n) {
+	SDL_FreeSurface(tile);
+
+	tile=SDL_CreateRGBSurface(SDL_SWSURFACE|SDL_SRCALPHA,32,32,8,0,0,0,0);
+	SDL_SetColorKey(tile,SDL_SRCCOLORKEY,0);
+	SDL_Surface *rgb=SDL_CreateRGBSurface(SDL_SWSURFACE|SDL_SRCALPHA,32,32,32,0,0,0,0);
+
+	SDL_Rect r={32*(n%20),32*(n/20),32,32};
+	SDL_BlitSurface(tiles,&r,rgb,0);
+
+	SDL_LockSurface(rgb);
+	SDL_Color cs[256];
+	int ncolors=1;
+	int i,j;
+	for(i=0;i<1024;i++) {
+		uint32_t c=((uint32_t*)(rgb->pixels))[i];
+		uint8_t r=c>>16,g=(c>>8)&0xff,b=c&0xff;
+		for(j=0;j<ncolors;j++) {
+			if(cs[j].r==r &&cs[j].g==g &&cs[j].b==b) {
+				goto next;
+			}
+		}
+		cs[ncolors].r=r; cs[ncolors].g=g; cs[ncolors].b=b;
+		ncolors++;
+		next:;
+	}
+	SDL_UnlockSurface(rgb);
+	SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,cs,0,ncolors);
+	SDL_BlitSurface(rgb,0,tile,0);
+	SDL_FreeSurface(rgb);
+
+	printf("/set %u\n",ncolors);
+}
+
 int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_VIDEO);
 	sc=SDL_SetVideoMode(800,600,32,SDL_HWSURFACE|SDL_DOUBLEBUF);
 
 	if(argc>1) {
-		tile=IMG_Load(argv[1]);
+		tiles=IMG_Load(argv[1]);
 	}
 
-	if(!tile) {
-		tile=SDL_CreateRGBSurface(SDL_SWSURFACE,32,32,8,0,0,0,0);
-		int i; for(i=0;i<256;i++){
-			colors[i].r=i;
-			colors[i].g=i;
-			colors[i].b=i;
-		}
-		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
-	} else {
-		int i; for(i=0;i<tile->format->palette->ncolors;i++){
-			colors[i]=tile->format->palette->colors[i];
-		}
+	if(!tiles) {
+		tiles=SDL_CreateRGBSurface(SDL_SWSURFACE,640,640,32,0,0,0,0);
 	}
+
+	set_edit_tile(0);
 
 	{
 		uint8_t r,g,b,a;
