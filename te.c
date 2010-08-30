@@ -217,6 +217,38 @@ void display_draw_cursor() {
 	}
 }
 
+void select_color() {
+	if(mx>256+32 && mx<2*256+32 && my<256) {
+		ccolor=(my/16)*16 +((mx-256-32)/16);
+		uint8_t r,g,b,a;
+		SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
+		RGB(r,g,b,&ch,&cs,&cl);
+	}
+}
+
+void select_hue() {
+	if(mx>256+32 && mx<256+32+256 && my>256+32 && my<256+64) {
+		ch=mx-256-32;
+		uint32_t c=HSL(ch,cs,cl);
+		colors[ccolor].r=(c>>16)&0xff;
+		colors[ccolor].g=(c>> 8)&0xff;
+		colors[ccolor].b=(c    )&0xff;
+		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
+	}
+}
+
+void select_satlum() {
+	if(mx>256+32 && mx<256+32+256 && my>256+32+32 && my<256+32+32+256) {
+		cs=mx-256-32;
+		cl=my-256-32-32;
+		uint32_t c=HSL(ch,cs,cl);
+		colors[ccolor].r=(c>>16)&0xff;
+		colors[ccolor].g=(c>> 8)&0xff;
+		colors[ccolor].b=(c    )&0xff;
+		SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_VIDEO);
 	sc=SDL_SetVideoMode(800,600,32,SDL_HWSURFACE|SDL_DOUBLEBUF);
@@ -255,32 +287,12 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			if(e.type==SDL_MOUSEBUTTONDOWN) {
-				int x=e.button.x,y=e.button.y;
-				if(x<256 && y<256) {
-					SDL_Rect r={x/8,y/8,1,1};
-					SDL_FillRect(tile,&r,ccolor);
-					SDL_ShowCursor(0);
-				} else if(x>256+32 && x<2*256+32 && y<256) {
-					ccolor=(y/16)*16 +((x-256-32)/16);
-					uint8_t r,g,b,a;
-					SDL_GetRGBA(ccolor,tile->format,&r,&g,&b,&a);
-					RGB(r,g,b,&ch,&cs,&cl);
-				} else if(x>256+32 && x<256+32+256 && y>256+32 && y<256+64) {
-					ch=x-256-32;
-					uint32_t c=HSL(ch,cs,cl);
-					colors[ccolor].r=(c>>16)&0xff;
-					colors[ccolor].g=(c>> 8)&0xff;
-					colors[ccolor].b=(c    )&0xff;
-					SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
-				} else if(x>256+32 && x<256+32+256 && y>256+32+32 && y<256+32+32+256) {
-					cs=x-256-32;
-					cl=y-256-32-32;
-					uint32_t c=HSL(ch,cs,cl);
-					colors[ccolor].r=(c>>16)&0xff;
-					colors[ccolor].g=(c>> 8)&0xff;
-					colors[ccolor].b=(c    )&0xff;
-					SDL_SetPalette(tile,SDL_LOGPAL|SDL_PHYSPAL,colors,0,256);
-				}
+				mx=e.button.x;
+				my=e.button.y;
+
+				select_color();
+				select_hue();
+				select_satlum();
 			}
 		}
 
@@ -302,27 +314,16 @@ int main(int argc, char *argv[]) {
 
 		display_palette_hover_color();
 
-		{
-			SDL_Rect a={256+32,256+32,256,256};
-			SDL_FillRect(sc,&a,0xffffff);
+		display_hue_bar();
+		display_hue_current();
 
-
-			display_hue_bar();
-			display_hue_current();
-
-			display_satlum_rect();
-			display_satlum_current();
-
-		}
+		display_satlum_rect();
+		display_satlum_current();
 
 		display_draw_cursor();
 
-
 		SDL_Flip(sc);
 	}
-
-
-
 
 end:	SDL_Quit();
 	return 0;
