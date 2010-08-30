@@ -217,8 +217,6 @@ void display_draw_cursor() {
 	}
 }
 
-#if 1
-
 void select_color() {
 	if(mx>256+32 && mx<2*256+32 && my<256) {
 		ccolor=(my/16)*16 +((mx-256-32)/16);
@@ -249,12 +247,9 @@ void select_satlum() {
 }
 
 
-#endif
-
 void set_edit_tile(int n) {
 	tile=tiles+n;
-
-
+	ccolor=0;
 }
 
 uint8_t fill_palette(struct color *p, uint8_t r, uint8_t g, uint8_t b) {
@@ -312,11 +307,9 @@ int main(int argc, char *argv[]) {
 				mx=e.button.x;
 				my=e.button.y;
 
-#if 1
 				select_color();
 				select_hue();
 				select_satlum();
-#endif
 			}
 		}
 
@@ -332,10 +325,9 @@ int main(int argc, char *argv[]) {
 
 		display_big_image();
 
-#if 0
 		display_draw_cursor();
+#if 0
 		display_small_tiles();
-
 #endif
 		display_palette();
 		display_palette_current_color();
